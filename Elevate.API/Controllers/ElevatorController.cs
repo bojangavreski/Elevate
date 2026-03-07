@@ -40,13 +40,9 @@ namespace Elevate.API.Controllers
 
         private ElevatorRequest GenerateRandomRequest()
         {
-            var request = new ElevatorRequest
-            {
-                From = RandomNumberGenerator.GetInt32(1, 11),
-                To = RandomNumberGenerator.GetInt32(1, 11),
-            };
+            ElevatorRequest request;
 
-            while (request.From == request.To)
+            do
             {
                 request = new ElevatorRequest
                 {
@@ -54,9 +50,9 @@ namespace Elevate.API.Controllers
                     To = RandomNumberGenerator.GetInt32(1, 11),
                 };
             }
+            while (request.From == request.To);
 
             return request;
-
         }
     }
 }
