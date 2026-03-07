@@ -10,9 +10,4 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Elevate.Models\Elevate.Models.csproj" />
-    <ProjectReference Include="..\Elevate.Serices\Elevate.Serices.csproj" />
-  </ItemGroup>
-
 </Project>

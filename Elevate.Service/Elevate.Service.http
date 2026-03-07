@@ -1,0 +1,6 @@
+@Elevate.Service_HostAddress = http://localhost:5020
+
+GET {{Elevate.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

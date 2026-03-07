@@ -1,3 +1,8 @@
 <Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Elevate.Unit.Tests/Elevate.Unit.Tests.csproj" />
+  </Folder>
   <Project Path="Elevate.API/Elevate.API.csproj" />
+  <Project Path="Elevate.Models/Elevate.Models.csproj" />
+  <Project Path="Elevate.Serices/Elevate.Serices.csproj" />
 </Solution>
