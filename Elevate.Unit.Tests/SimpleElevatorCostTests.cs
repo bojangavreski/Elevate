@@ -56,8 +56,13 @@ namespace Elevate.Unit.Tests
                                                       .Build();
 
             var existingRequest = new ElevatorRequest { From = 5, To = 2 };
-            await elevator.EnqueueRequest(existingRequest, CancellationToken.None);
+
+            var cts = new CancellationTokenSource();
+
+            await elevator.EnqueueRequest(existingRequest, cts.Token);
             
+            cts.Cancel();
+
             var newRequest = new ElevatorRequest { From = 6, To = 3 };
 
             // Act

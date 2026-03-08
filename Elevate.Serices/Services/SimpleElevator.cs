@@ -2,6 +2,7 @@
 using Elevate.Models.Enums;
 using Elevate.Models.Models;
 using Elevate.Serices.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elevate.Serices.Services
@@ -16,16 +17,19 @@ namespace Elevate.Serices.Services
         private readonly SemaphoreSlim _movementLock = new SemaphoreSlim(1, 1);
         private readonly ILogger<SimpleElevator> _logger;
         private readonly IDelayProvider _delayProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private bool _isMoving = false;
 
         public SimpleElevator(int id, 
                               ILogger<SimpleElevator> logger,
-                              IDelayProvider delayProvider) : base(id)
+                              IDelayProvider delayProvider,
+                              IServiceScopeFactory serviceScopeFactory) : base(id)
         {
             CurrentFloor = 1;
             Direction = ElevatorDirectionType.Idle;
             _logger = logger;
             _delayProvider = delayProvider;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public override int CalculateCost(ElevatorRequest newRequest)
@@ -77,6 +81,12 @@ namespace Elevate.Serices.Services
                 await _delayProvider.Delay(TimeSpan.FromSeconds(MovementDelaySeconds), cancellationToken);
 
                 CurrentFloor = nextFloor;
+
+                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                    await notificationService.Move(Id, Direction.ToString().ToLower());
+                }
 
                 _logger.LogInformation($"Elevator {Id} moved to floor {CurrentFloor}");
 
@@ -152,7 +162,9 @@ namespace Elevate.Serices.Services
 
         private async Task AddRequest(ElevatorRequest request, CancellationToken cancellationToken)
         {
-            await _movementLock.WaitAsync(cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return;
+
+            await _movementLock.WaitAsync(cancellationToken); // TODO handle cancelation 
             try
             {
                 _activeRequests.Add(request);
@@ -182,6 +194,15 @@ namespace Elevate.Serices.Services
                         }
                     }, cancellationToken);
                 }
+
+
+                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                    await notificationService.RequestEnqueued(Id, request.From, request.To);
+                }
+
+                _logger.LogInformation($"==== Elevator {Id} ==== Request From: {request.From} To: {request.To}");
             }
             finally
             {
@@ -207,6 +228,12 @@ namespace Elevate.Serices.Services
             if (toDisembark.Count > 0 ||
                 toEmbark.Count > 0)
             {
+                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                    await notificationService.Stop(Id); // It is really tough to handle both embark and disembark in the frontend
+                }
+
                 await _delayProvider.Delay(TimeSpan.FromSeconds(StopDelaySeconds), cancellationToken);
             }
         }

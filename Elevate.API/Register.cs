@@ -12,12 +12,15 @@ namespace Elevate.API
 
             for (int i = 1; i <= 4; i++)
             {
+                int elevatorId = i;
+
                 services.AddSingleton<IElevator>(sp =>
                 {
                     var logger = sp.GetRequiredService<ILogger<SimpleElevator>>();
                     var delayProvider = sp.GetRequiredService<IDelayProvider>();
+                    var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
 
-                    return new SimpleElevator(i, logger, delayProvider);
+                    return new SimpleElevator(elevatorId, logger, delayProvider, serviceScopeFactory);
                 });
             }
 

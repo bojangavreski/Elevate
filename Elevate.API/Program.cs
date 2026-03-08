@@ -1,6 +1,7 @@
 
 using Elevate.Models.Contracts;
 using Elevate.Serices.Contracts;
+using Elevate.Serices.Hubs;
 using Elevate.Serices.Services;
 
 namespace Elevate.API
@@ -12,8 +13,23 @@ namespace Elevate.API
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddSingleton<IDelayProvider, DelayProvider>()
+                            .AddScoped<INotificationService, NotificationService>()
                             .RegisterElevatorServices()
                             .AddSingleton<IElevatorManager, ElevatorManager>();
+
+            builder.Services.AddSignalR();
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("SignalRPolicy", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -32,6 +48,10 @@ namespace Elevate.API
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.UseCors("SignalRPolicy");
+
+            app.MapHub<ElevatorHub>("/elevatorHub");
 
             app.Run();
         }

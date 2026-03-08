@@ -1,7 +1,6 @@
 using Elevate.Models.Contracts;
 using Elevate.Models.Models;
 using Elevate.Serices.Services;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Elevate.Unit.Tests
@@ -12,14 +11,12 @@ namespace Elevate.Unit.Tests
         public async Task RequestElevator_SelectsElevatorWithLowestCost()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger<ElevatorManager>>();
-
             var mockElevator1 = CreateMockElevator(1, 10);
             var mockElevator2 = CreateMockElevator(2, 3);
             var mockElevator3 = CreateMockElevator(3, 7);
 
             var elevators = new List<IElevator> { mockElevator1.Object, mockElevator2.Object, mockElevator3.Object };
-            var manager = new ElevatorManager(elevators, mockLogger.Object);
+            var manager = new ElevatorManager(elevators);
 
             var request = new ElevatorRequest { From = 5, To = 8 };
 
@@ -36,13 +33,11 @@ namespace Elevate.Unit.Tests
         public async Task RequestElevator_EnqueueMultipleRequestsInASingleElevator()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger<ElevatorManager>>();
-            
             var mockElevator1 = CreateMockElevator(1, 2);
             var mockElevator2 = CreateMockElevator(2, 5);
 
             var elevators = new List<IElevator> { mockElevator1.Object, mockElevator2.Object };
-            var manager = new ElevatorManager(elevators, mockLogger.Object);
+            var manager = new ElevatorManager(elevators);
 
             var request1 = new ElevatorRequest { From = 3, To = 7 };
             var request2 = new ElevatorRequest { From = 5, To = 9 };

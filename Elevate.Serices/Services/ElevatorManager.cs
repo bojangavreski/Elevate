@@ -7,13 +7,10 @@ namespace Elevate.Serices.Services
 {
     public class ElevatorManager : IElevatorManager
     {
-        private readonly ILogger<ElevatorManager> _logger;
         private readonly IEnumerable<IElevator> _elevators;
 
-        public ElevatorManager(IEnumerable<IElevator> elevators,
-                               ILogger<ElevatorManager> logger)
+        public ElevatorManager(IEnumerable<IElevator> elevators)
         {
-            _logger = logger;
             _elevators = elevators;
         }
 
@@ -24,11 +21,8 @@ namespace Elevate.Serices.Services
 
             if(best != null)
             {
-                _logger.LogInformation($"==== Elevator {best.Id} ==== Request From: {elevatorRequest.From} To: {elevatorRequest.To}");
                 await best.EnqueueRequest(elevatorRequest, cancellationToken);
             }
-
-            _logger.LogInformation($"====Error==== Request From: {elevatorRequest.From} To: {elevatorRequest.To} cannot be handled");
         }
     }
 }
