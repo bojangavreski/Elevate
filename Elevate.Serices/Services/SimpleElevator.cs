@@ -69,50 +69,70 @@ namespace Elevate.Serices.Services
         {
             if (cancellationToken.IsCancellationRequested) return;
 
-            await _movementLock.WaitAsync(cancellationToken); // TODO handle cancelation 
+            bool lockAcquired = false;
             try
             {
+                await _movementLock.WaitAsync(cancellationToken);
+                lockAcquired = true;
+
                 _activeRequests.Add(request);
 
-                if (!_isMoving)
+                if(!_isMoving)
                 {
-                    _isMoving = true;
-
-                    // Determine initial direction
-                    if (Direction == ElevatorDirectionType.Idle)
-                    {
-                        Direction = request.From > CurrentFloor ? ElevatorDirectionType.Up :
-                                    request.From < CurrentFloor ? ElevatorDirectionType.Down :
-                                    request.GetDirection(); // If already on the same floor, use request direction
-                    }
-
-                    // Start movement in background
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await Move(cancellationToken);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw new Exception("Something very bad happened"); // This is for demonstration purposes only
-                        }
-                    }, cancellationToken);
+                    InitializeElevator(request, cancellationToken);
                 }
-
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
                     var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                    await notificationService.RequestEnqueued(Id, request.From, request.To, request.Uid.ToString() );
+                    await notificationService.RequestEnqueued(Id, request.From, request.To, request.Uid.ToString());
                 }
 
                 _logger.LogInformation($"==== Elevator {Id} ==== Request From: {request.From} To: {request.To}");
             }
+            catch (OperationCanceledException)
+            {
+                if (lockAcquired)
+                {
+                    _activeRequests.Remove(request);
+                }
+            }
             finally
             {
-                _movementLock.Release();
+                if (lockAcquired)
+                {
+                    _movementLock.Release();
+                }
             }
+        }
+
+        private void InitializeElevator(ElevatorRequest request, CancellationToken cancellationToken)
+        {
+            _isMoving = true;
+
+            if (Direction == ElevatorDirectionType.Idle)
+            {
+                Direction = request.From > CurrentFloor ? ElevatorDirectionType.Up :
+                            request.From < CurrentFloor ? ElevatorDirectionType.Down :
+                            request.GetDirection();
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Move(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    //await HandleMovementCancelled();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"==== Elevator {Id} ==== Movement failed unexpectedly.");
+                    //await HandleMovementFailed(ex);
+                }
+            }, CancellationToken.None);
         }
 
         private async Task Move(CancellationToken cancellationToken)
@@ -209,8 +229,6 @@ namespace Elevate.Serices.Services
                 }
             }
         }
-
-
 
         private bool ShouldStopAtFloor(int floor)
         {
