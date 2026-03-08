@@ -1,79 +1,97 @@
 ﻿using Elevate.Models.Contracts;
+using Elevate.Models.Models;
 using Elevate.Serices.Services;
 using Elevate.Unit.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Reflection;
 
 namespace Elevate.Unit.Tests.Builders
 {
     public class SimpleElevatorBuilder
     {
-        private static readonly Mock<ILogger<SimpleElevator>> _mockLogger = new Mock<ILogger<SimpleElevator>>();
+        private readonly Mock<ILogger<SimpleElevator>> _mockLogger = new();
+        private readonly Mock<INotificationService> _mockNotificationService = new();
+        private readonly Mock<IServiceProvider> _mockServiceProvider = new();
+        private readonly Mock<IServiceScope> _mockServiceScope = new();
+        private readonly Mock<IServiceScopeFactory> _mockServiceScopeFactory = new();
 
+        private IDelayProvider _delayProvider = new FakeDelayProvider();
+        private int _currentFloor = 1;
+        private double _stopDelaySeconds = 0;
+        private double _movementDelaySeconds = 0;
 
-        private static readonly Mock<INotificationService> _mockNotificationService = new Mock<INotificationService>();
+        public SimpleElevatorBuilder WithCurrentFloor(int currentFloor)
+        {
+            _currentFloor = currentFloor;
+            return this;
+        }
 
-        private static readonly Mock<IServiceProvider> _mockServiceProvider = new Mock<IServiceProvider>();
+        public SimpleElevatorBuilder WithStopDelaySeconds(double stopDelaySeconds)
+        {
+            _stopDelaySeconds = stopDelaySeconds;
+            return this;
+        }
 
-        private static readonly Mock<IServiceScope> _mockServiceScope = new Mock<IServiceScope>();
+        public SimpleElevatorBuilder WithMovementDelaySeconds(double movementDelaySeconds)
+        {
+            _movementDelaySeconds = movementDelaySeconds;
+            return this;
+        }
 
-        private static readonly Mock<IServiceScopeFactory> _mockServiceScopeFactory = new Mock<IServiceScopeFactory>();
+        public SimpleElevatorBuilder WithDelayProvider(IDelayProvider delayProvider)
+        {
+            _delayProvider = delayProvider;
+            return this;
+        }
 
-        private static readonly FakeDelayProvider _fakeDelayProvider = new FakeDelayProvider();
-
-        private readonly SimpleElevator _elevator;
-
-        public SimpleElevatorBuilder()
+        public SimpleElevator Build()
         {
             _mockNotificationService.Setup(sp => sp.Stop(It.IsAny<int>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.RequestEnqueued(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.SetIdle(It.IsAny<int>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.Move(It.IsAny<int>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
-
             _mockServiceProvider.Setup(sp => sp.GetService(typeof(INotificationService)))
                                 .Returns(_mockNotificationService.Object);
-
             _mockServiceScope.Setup(s => s.ServiceProvider)
                              .Returns(_mockServiceProvider.Object);
+            _mockServiceScopeFactory.Setup(f => f.CreateScope())
+                                    .Returns(_mockServiceScope.Object);
 
-            _mockServiceScopeFactory.Setup(f => f.CreateScope()).Returns(_mockServiceScope.Object);
+            var elevator = new SimpleElevator(
+                1, // id
+                _mockLogger.Object,
+                _delayProvider,
+                _mockServiceScopeFactory.Object
+            );
 
+            SetPrivateField(elevator, "CurrentFloor", _currentFloor);
+            SetPrivateField(elevator, "StopDelaySeconds", _stopDelaySeconds);
+            SetPrivateField(elevator, "MovementDelaySeconds", _movementDelaySeconds);
 
-            _elevator = new SimpleElevator(1, _mockLogger.Object, _fakeDelayProvider, _mockServiceScopeFactory.Object);
+            return elevator;
         }
 
-        public SimpleElevatorBuilder WithCurrentFloor(int currentFloor)
+        private static void SetPrivateField(SimpleElevator elevator, string fieldName, object value)
         {
-            typeof(SimpleElevator).BaseType!
-                .GetProperty("CurrentFloor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                .SetValue(_elevator, currentFloor);
+            var field = typeof(SimpleElevator).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field != null)
+            {
+                field.SetValue(elevator, value);
+                return;
+            }
 
-            return this;
-        }
+            // Try to find it in the base class as a property
+            var property = typeof(BaseElevator).GetProperty(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (property != null)
+            {
+                property.SetValue(elevator, value);
+                return;
+            }
 
-        public SimpleElevatorBuilder WithStopDelaySeconds(double stopDelaySeconds)
-        {
-            typeof(SimpleElevator)!
-                .GetField("StopDelaySeconds", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                .SetValue(_elevator, stopDelaySeconds);
-
-            return this;
-        }
-
-        public SimpleElevatorBuilder WithMovementDelaySeconds(double movementDelaySeconds)
-        {
-            typeof(SimpleElevator)!
-                .GetField("MovementDelaySeconds", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                .SetValue(_elevator, movementDelaySeconds);
-
-            return this;
-        }
-
-        public SimpleElevator Build()
-        {
-            return _elevator;
+            throw new InvalidOperationException($"Field or property '{fieldName}' not found");
         }
     }
 }

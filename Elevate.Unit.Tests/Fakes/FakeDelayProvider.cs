@@ -4,9 +4,9 @@ namespace Elevate.Unit.Tests.Fakes
 {
     public class FakeDelayProvider : IDelayProvider
     {
-        public Task Delay(TimeSpan delay, CancellationToken cancellationToken = default)
+        public async Task Delay(TimeSpan delay, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            await Task.Yield();
         }
     }
 }

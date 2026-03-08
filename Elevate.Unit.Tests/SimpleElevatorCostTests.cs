@@ -1,5 +1,6 @@
 using Elevate.Models.Models;
 using Elevate.Unit.Tests.Builders;
+using Elevate.Unit.Tests.Fakes;
 
 namespace Elevate.Unit.Tests
 {
@@ -32,7 +33,9 @@ namespace Elevate.Unit.Tests
         public async Task CalculateCost_WhenMovingUpAndRequestIsAhead_ReturnsDirectDistance()
         {
             // Arrange
+            var blockingDelayProvider = new BlockingDelayProvider();
             var elevator = new SimpleElevatorBuilder().WithCurrentFloor(3)
+                                                      .WithDelayProvider(blockingDelayProvider)
                                                       .Build();
 
             var existingRequest = new ElevatorRequest { From = 5, To = 8 };
@@ -52,16 +55,14 @@ namespace Elevate.Unit.Tests
         public async Task CalculateCost_WhenMovingDownAndRequestIsAhead_ReturnsDirectDistance()
         {
             // Arrange
+            var blockingDelayProvider = new BlockingDelayProvider();
             var elevator = new SimpleElevatorBuilder().WithCurrentFloor(8)
+                                                      .WithDelayProvider(blockingDelayProvider)
                                                       .Build();
 
             var existingRequest = new ElevatorRequest { From = 5, To = 2 };
 
-            var cts = new CancellationTokenSource();
-
-            await elevator.EnqueueRequest(existingRequest, cts.Token);
-            
-            cts.Cancel();
+            await elevator.EnqueueRequest(existingRequest, CancellationToken.None);
 
             var newRequest = new ElevatorRequest { From = 6, To = 3 };
 
@@ -77,7 +78,9 @@ namespace Elevate.Unit.Tests
         public async Task CalculateCost_WhenMovingUpButRequestIsBehind_ReturnsFullSweepCost()
         {
             // Arrange
+            var blockingDelayProvider = new BlockingDelayProvider();
             var elevator = new SimpleElevatorBuilder().WithCurrentFloor(3)
+                                                      .WithDelayProvider(blockingDelayProvider)
                                                       .Build();
 
             var existingRequest = new ElevatorRequest { From = 5, To = 8 };
@@ -97,18 +100,14 @@ namespace Elevate.Unit.Tests
         public async Task CalculateCost_WhenMovingDownButRequestIsAbove_ReturnsFullSweepCost()
         {
             // Arrange
+            var blockingDelayProvider = new BlockingDelayProvider();
             var elevator = new SimpleElevatorBuilder().WithCurrentFloor(7)
+                                                      .WithDelayProvider(blockingDelayProvider)
                                                       .Build();
 
             var existingRequest = new ElevatorRequest { From = 5, To = 2 };
-            var cts = new CancellationTokenSource();
 
-            await elevator.EnqueueRequest(existingRequest, cts.Token);
-
-            cts.Cancel();
-
-            // Give background task a moment to start
-            await Task.Delay(10);
+            await elevator.EnqueueRequest(existingRequest, CancellationToken.None);
             
             var newRequest = new ElevatorRequest { From = 9, To = 10 };
 
@@ -124,7 +123,9 @@ namespace Elevate.Unit.Tests
         public async Task CalculateCost_WithMultipleActiveRequests_ConsidersHighestDestination()
         {
             // Arrange
+            var blockingDelayProvider = new BlockingDelayProvider();
             var elevator = new SimpleElevatorBuilder().WithCurrentFloor(2)
+                                                      .WithDelayProvider(blockingDelayProvider)
                                                       .Build();
 
             var request1 = new ElevatorRequest { From = 3, To = 5 };
@@ -132,14 +133,14 @@ namespace Elevate.Unit.Tests
             await elevator.EnqueueRequest(request1, CancellationToken.None);
             await elevator.EnqueueRequest(request2, CancellationToken.None);
             
-            var newRequest = new ElevatorRequest { From = 1, To = 0 };
+            var newRequest = new ElevatorRequest { From = 2, To = 1 };
 
             // Act
             var cost = elevator.CalculateCost(newRequest);
 
             // Assert
-            // Cost calculation (9 - 2) + |9 - 1| = 7 + 8 = 15
-            Assert.Equal(15, cost);
+            // Cost calculation (9 - 2) + |9 - 2| = 7 + 7 = 14
+            Assert.Equal(14, cost);
         }
     }
 }

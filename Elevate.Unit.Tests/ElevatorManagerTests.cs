@@ -63,6 +63,7 @@ namespace Elevate.Unit.Tests
             var mockElevator = new Mock<IElevator>();
             mockElevator.Setup(e => e.Id).Returns(id);
             mockElevator.Setup(e => e.CalculateCost(It.IsAny<ElevatorRequest>())).Returns(cost);
+            mockElevator.Setup(e => e.CanEnqueue(It.IsAny<ElevatorRequest>())).Returns(true);
             mockElevator.Setup(e => e.EnqueueRequest(It.IsAny<ElevatorRequest>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
