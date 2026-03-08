@@ -9,5 +9,7 @@ namespace Elevate.Models.Contracts
         int CalculateCost(ElevatorRequest request);
 
         Task EnqueueRequest(ElevatorRequest request, CancellationToken cancellationToken);
+
+        bool CanEnqueue(ElevatorRequest elevatorRequest);
     }
 }

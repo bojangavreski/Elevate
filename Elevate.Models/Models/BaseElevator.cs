@@ -19,5 +19,13 @@ namespace Elevate.Models.Models
         public abstract int CalculateCost(ElevatorRequest request);
 
         public abstract Task EnqueueRequest(ElevatorRequest request, CancellationToken cancellationToken);
+
+        public virtual bool CanEnqueue(ElevatorRequest elevatorRequest)
+        {
+            return elevatorRequest.From >= 1 &&
+                   elevatorRequest.To > 1 &&
+                   elevatorRequest.From <= 10 && elevatorRequest.To <= 10 &&
+                   elevatorRequest.From != elevatorRequest.To;
+        }
     }
 }

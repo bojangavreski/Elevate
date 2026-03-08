@@ -19,14 +19,16 @@ namespace Elevate.Serices.Services
 
         public async Task RequestElevator(ElevatorRequest elevatorRequest, CancellationToken cancellationToken)
         {
-            var best = _elevators.MinBy(e => e.CalculateCost(elevatorRequest));
+            var best = _elevators.Where(x => x.CanEnqueue(elevatorRequest))
+                                 .MinBy(e => e.CalculateCost(elevatorRequest));
 
             if(best != null)
             {
-                _logger.LogInformation($"==== {best.Id} ==== Request From: {elevatorRequest.From} To: {elevatorRequest.To}");
+                _logger.LogInformation($"==== Elevator {best.Id} ==== Request From: {elevatorRequest.From} To: {elevatorRequest.To}");
                 await best.EnqueueRequest(elevatorRequest, cancellationToken);
             }
-                                 
+
+            _logger.LogInformation($"====Error==== Request From: {elevatorRequest.From} To: {elevatorRequest.To} cannot be handled");
         }
     }
 }

@@ -16,17 +16,9 @@ namespace Elevate.API.Controllers
             _elevatorManager = elevatorManager;
         }
 
-        [HttpPost]
-        public async Task Test([FromBody] ElevatorRequest elevatorRequest,
-                                                       CancellationToken cancellationToken)
-        {
-            await _elevatorManager.RequestElevator(elevatorRequest, cancellationToken);
-        }
-
 
         [HttpPost("loop")]
-        public async Task Loop([FromBody] ElevatorRequest elevatorRequest,
-                                                       CancellationToken cancellationToken)
+        public async Task Loop(CancellationToken cancellationToken)
         {
             while (true)
             {
