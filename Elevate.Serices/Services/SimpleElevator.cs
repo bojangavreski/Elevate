@@ -1,4 +1,5 @@
-﻿using Elevate.Models.Enums;
+﻿using Elevate.Models.Contracts;
+using Elevate.Models.Enums;
 using Elevate.Models.Models;
 using Elevate.Serices.Utils;
 using Microsoft.Extensions.Logging;
@@ -7,21 +8,24 @@ namespace Elevate.Serices.Services
 {
     public class SimpleElevator : BaseElevator
     {
-        private const int MaxFloor = 10;
-        private const int MovementDelaySeconds = 2;
-        private const int StopDelaySeconds = 2;
+        private int MaxFloor = 10;
+        private double MovementDelaySeconds = 2;
+        private double StopDelaySeconds = 2;
 
         private readonly List<ElevatorRequest> _activeRequests = new List<ElevatorRequest>();
         private readonly SemaphoreSlim _movementLock = new SemaphoreSlim(1, 1);
         private readonly ILogger<SimpleElevator> _logger;
+        private readonly IDelayProvider _delayProvider;
         private bool _isMoving = false;
 
         public SimpleElevator(int id, 
-                              ILogger<SimpleElevator> logger) : base(id)
+                              ILogger<SimpleElevator> logger,
+                              IDelayProvider delayProvider) : base(id)
         {
             CurrentFloor = 1;
             Direction = ElevatorDirectionType.Idle;
             _logger = logger;
+            _delayProvider = delayProvider;
         }
 
         public override int CalculateCost(ElevatorRequest newRequest)
@@ -70,7 +74,7 @@ namespace Elevate.Serices.Services
                                              CurrentFloor - 1;
 
                 // Wait for movement 
-                await Task.Delay(TimeSpan.FromSeconds(MovementDelaySeconds), cancellationToken);
+                await _delayProvider.Delay(TimeSpan.FromSeconds(MovementDelaySeconds), cancellationToken);
 
                 CurrentFloor = nextFloor;
 
@@ -199,11 +203,11 @@ namespace Elevate.Serices.Services
             var toDisembark = HandleDisembarking(floor);
             var toEmbark = HandleEmbarking(floor);            
 
-            // Wait for embark/disembark (10 seconds) if anyone got on or off
+            // Wait for embark/disembark if anyone got on or off
             if (toDisembark.Count > 0 ||
                 toEmbark.Count > 0)
             {
-                await Task.Delay(TimeSpan.FromSeconds(StopDelaySeconds), cancellationToken);
+                await _delayProvider.Delay(TimeSpan.FromSeconds(StopDelaySeconds), cancellationToken);
             }
         }
 
