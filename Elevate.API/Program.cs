@@ -1,8 +1,5 @@
 
-using Elevate.Models.Contracts;
-using Elevate.Serices.Contracts;
 using Elevate.Serices.Hubs;
-using Elevate.Serices.Services;
 
 namespace Elevate.API
 {
@@ -12,10 +9,7 @@ namespace Elevate.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddSingleton<IDelayProvider, DelayProvider>()
-                            .AddScoped<INotificationService, NotificationService>()
-                            .RegisterElevatorServices()
-                            .AddSingleton<IElevatorManager, ElevatorManager>();
+            builder.Services.RegisterServices(); // Register custom services
 
             builder.Services.AddSignalR();
 

@@ -13,9 +13,9 @@ namespace Elevate.Serices.Services
             _elevatorHubContext = elevatorHubContext;
         }
 
-        public async Task RequestEnqueued(int elevatorId, int from, int to)
+        public async Task RequestEnqueued(int elevatorId, int from, int to, string uid)
         {
-            await _elevatorHubContext.Clients.All.SendAsync("EnqueueRequest", elevatorId, from, to);
+            await _elevatorHubContext.Clients.All.SendAsync("EnqueueRequest", elevatorId, from, to, uid);
         }
 
         public async Task Move(int elevatorId, string direction)
@@ -31,6 +31,11 @@ namespace Elevate.Serices.Services
         public async Task SetIdle(int elevatorId)
         {
             await _elevatorHubContext.Clients.All.SendAsync("SetIdle", elevatorId);
+        }
+
+        public async Task RemoveRequests(IEnumerable<Guid> requestUids)
+        {
+            await _elevatorHubContext.Clients.All.SendAsync("RemoveRequests", requestUids.Select(x => x.ToString()));
         }
     }
 }

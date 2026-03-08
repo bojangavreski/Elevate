@@ -1,11 +1,21 @@
 ﻿
 using Elevate.Models.Contracts;
+using Elevate.Serices.Contracts;
 using Elevate.Serices.Services;
 
 namespace Elevate.API
 {
     public static class Register
     {
+
+        public static IServiceCollection RegisterServices(this IServiceCollection services)
+        {
+            return services.AddSingleton<IElevatorManager, ElevatorManager>()
+                            .AddSingleton<IDelayProvider, DelayProvider>()
+                            .AddScoped<INotificationService, NotificationService>()
+                            .RegisterElevatorServices();
+        }
+        
 
         public static IServiceCollection RegisterElevatorServices(this IServiceCollection services)
         {
