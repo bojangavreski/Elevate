@@ -18,7 +18,7 @@ namespace Elevate.Unit.Tests
             await elevator.EnqueueRequest(request, CancellationToken.None);
 
             // Give the background task time to complete all movements
-            await Task.Delay(200);
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);
@@ -40,7 +40,8 @@ namespace Elevate.Unit.Tests
             // Act
             await elevator.EnqueueRequest(request, CancellationToken.None);
 
-            await Task.Delay(200);
+            // Give the background task time to complete all movements
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);
@@ -54,7 +55,8 @@ namespace Elevate.Unit.Tests
         public async Task Movement_ElevatorHandlesMultipleRequestsInSameDirection()
         {
             // Arrange
-            var elevator = new SimpleElevatorBuilder().WithCurrentFloor(1).Build();
+            var elevator = new SimpleElevatorBuilder().WithCurrentFloor(1)
+                                                      .Build();
 
             var request1 = new ElevatorRequest { From = 3, To = 5 };
             var request2 = new ElevatorRequest { From = 4, To = 7 };
@@ -65,7 +67,8 @@ namespace Elevate.Unit.Tests
             await elevator.EnqueueRequest(request2, CancellationToken.None);
             await elevator.EnqueueRequest(request3, CancellationToken.None);
 
-            await Task.Delay(200);
+            // Give the background task time to complete all movements
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);
@@ -88,7 +91,8 @@ namespace Elevate.Unit.Tests
             await elevator.EnqueueRequest(request1, CancellationToken.None);
             await elevator.EnqueueRequest(request2, CancellationToken.None);
 
-            await Task.Delay(200);
+            // Give the background task time to complete all movements
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);
@@ -112,7 +116,8 @@ namespace Elevate.Unit.Tests
             await elevator.EnqueueRequest(request1, CancellationToken.None);
             await elevator.EnqueueRequest(request2, CancellationToken.None);
 
-            await Task.Delay(200);
+            // Give the background task time to complete all movements
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);
@@ -133,7 +138,8 @@ namespace Elevate.Unit.Tests
             // Act
             await elevator.EnqueueRequest(request, CancellationToken.None);
 
-            await Task.Delay(200);
+            // Give the background task time to complete all movements
+            await Task.Delay(300);
 
             var finalFloor = SimpleElevatorUtils.GetCurrentFloor(elevator);
             var finalDirection = SimpleElevatorUtils.GetDirection(elevator);

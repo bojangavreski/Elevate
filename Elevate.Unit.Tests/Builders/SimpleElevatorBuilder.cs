@@ -2,7 +2,6 @@
 using Elevate.Models.Models;
 using Elevate.Serices.Services;
 using Elevate.Unit.Tests.Fakes;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Reflection;
@@ -52,7 +51,7 @@ namespace Elevate.Unit.Tests.Builders
             _mockNotificationService.Setup(sp => sp.RemoveRequests(It.IsAny<IEnumerable<Guid>>())).Returns(Task.CompletedTask);
 
             var elevator = new SimpleElevator(
-                1, // id
+                id: 1,
                 _mockLogger.Object,
                 _delayProvider,
                 _mockNotificationService.Object

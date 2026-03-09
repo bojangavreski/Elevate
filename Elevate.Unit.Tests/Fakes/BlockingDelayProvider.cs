@@ -10,10 +10,5 @@ namespace Elevate.Unit.Tests.Fakes
         {
             return _blockingTcs.Task.WaitAsync(cancellationToken);
         }
-        
-        public void Release()
-        {
-            _blockingTcs.TrySetResult(true);
-        }
     }
 }

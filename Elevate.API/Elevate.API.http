@@ -1,6 +1,11 @@
-@Elevate.API_HostAddress = http://localhost:5235
+@Elevate.API_HostAddress = https://localhost:7097/api
+@timeout 60000
 
 GET {{Elevate.API_HostAddress}}/weatherforecast/
 Accept: application/json
 
+
 ###
+POST {{Elevate.API_HostAddress}}/elevator/loop
+Accept: application/json
+Body: {}

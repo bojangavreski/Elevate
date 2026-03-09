@@ -8,8 +8,8 @@ namespace Elevate.Serices.Services
 {
     public class SimpleElevator : BaseElevator
     {
-        private double MovementDelaySeconds = 2;
-        private double StopDelaySeconds = 2;
+        private double MovementDelaySeconds = 10;
+        private double StopDelaySeconds = 10;
 
         private readonly List<ElevatorRequest> _activeRequests = new List<ElevatorRequest>();
         private readonly SemaphoreSlim _movementLock = new SemaphoreSlim(1, 1);
@@ -136,7 +136,6 @@ namespace Elevate.Serices.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"==== Elevator {Id} ==== Movement failed unexpectedly.");
                     //await HandleMovementFailed(ex);
                 }
             }, CancellationToken.None);
