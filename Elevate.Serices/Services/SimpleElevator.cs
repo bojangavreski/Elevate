@@ -15,6 +15,8 @@ namespace Elevate.Serices.Services
 
         private readonly List<ElevatorRequest> _activeRequests = new List<ElevatorRequest>();
         private readonly SemaphoreSlim _movementLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _elevatorInitializationLock = new SemaphoreSlim(1, 1);
+
         private readonly ILogger<SimpleElevator> _logger;
         private readonly IDelayProvider _delayProvider;
         private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -72,7 +74,7 @@ namespace Elevate.Serices.Services
             bool lockAcquired = false;
             try
             {
-                await _movementLock.WaitAsync(cancellationToken);
+                await _elevatorInitializationLock.WaitAsync(cancellationToken);
                 lockAcquired = true;
 
                 _activeRequests.Add(request);
@@ -101,7 +103,7 @@ namespace Elevate.Serices.Services
             {
                 if (lockAcquired)
                 {
-                    _movementLock.Release();
+                    _elevatorInitializationLock.Release();
                 }
             }
         }
@@ -137,43 +139,73 @@ namespace Elevate.Serices.Services
 
         private async Task Move(CancellationToken cancellationToken)
         {
-            while (_activeRequests.Count > 0)
+            while (true)
             {
-                // If the elevator was idle, determine whether should we embark passengers on the current floor before moving
-                await CurrentFloorStop(cancellationToken);
-
-                // Move one floor in the current direction
-                int nextFloor = Direction == ElevatorDirectionType.Up ?
-                                             CurrentFloor + 1 :
-                                             CurrentFloor - 1;
-
-                // Wait for movement 
-                await _delayProvider.Delay(TimeSpan.FromSeconds(MovementDelaySeconds), cancellationToken);
-
-                CurrentFloor = nextFloor;
-
-                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                await _movementLock.WaitAsync(cancellationToken);
+                try
                 {
-                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                    await notificationService.Move(Id, Direction.ToString().ToLower());
+                    if (_activeRequests.Count == 0)
+                    {
+                        _isMoving = false;
+                        break;
+                    }
+
+                    // If the elevator was idle, determine whether should we embark passengers on the current floor before moving
+                    await CurrentFloorStop(cancellationToken);
+
+                    if (Direction == ElevatorDirectionType.Idle)
+                    {
+                        _isMoving = false;
+                        break;
+                    }
+
+                    // Move one floor in the current direction
+                    int nextFloor = Direction == ElevatorDirectionType.Up ?
+                                                 CurrentFloor + 1 :
+                                                 CurrentFloor - 1;
+
+                    // Release lock during delay
+                    _movementLock.Release();
+
+                    // Wait for movement 
+                    await _delayProvider.Delay(TimeSpan.FromSeconds(MovementDelaySeconds), cancellationToken);
+
+                    await _movementLock.WaitAsync(cancellationToken);
+
+                    CurrentFloor = nextFloor;
+
+                    using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                        await notificationService.Move(Id, Direction.ToString().ToLower());
+                    }
+
+                    _logger.LogInformation($"Elevator {Id} moved to floor {CurrentFloor}");
+
+                    UpdateDirection();
+
+                    // Check if we need to stop at this floor
+                    await CurrentFloorStop(cancellationToken);
+
+                    // If no more requests, stop moving
+                    if (Direction == ElevatorDirectionType.Idle)
+                    {
+                        _isMoving = false;
+
+                        using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                        {
+                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                            await notificationService.SetIdle(Id);
+                        }
+
+                        break;
+                    }
                 }
-
-                _logger.LogInformation($"Elevator {Id} moved to floor {CurrentFloor}");
-
-                UpdateDirection();
-
-                // Check if we need to stop at this floor
-                await CurrentFloorStop(cancellationToken);
-
-                // If no more requests, stop moving
-                if (Direction == ElevatorDirectionType.Idle)
+                finally
                 {
-                    _isMoving = false;
-                    break;
+                    _movementLock.Release();
                 }
             }
-
-            _isMoving = false;
         }
 
         private async Task CurrentFloorStop(CancellationToken cancellationToken)

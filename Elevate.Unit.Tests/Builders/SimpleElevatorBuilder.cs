@@ -49,9 +49,10 @@ namespace Elevate.Unit.Tests.Builders
         public SimpleElevator Build()
         {
             _mockNotificationService.Setup(sp => sp.Stop(It.IsAny<int>())).Returns(Task.CompletedTask);
-            _mockNotificationService.Setup(sp => sp.RequestEnqueued(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>())).Returns(Task.CompletedTask);
+            _mockNotificationService.Setup(sp => sp.RequestEnqueued(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.SetIdle(It.IsAny<int>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.Move(It.IsAny<int>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+            _mockNotificationService.Setup(sp => sp.RemoveRequests(It.IsAny<IEnumerable<Guid>>())).Returns(Task.CompletedTask);
 
             _mockServiceProvider.Setup(sp => sp.GetService(typeof(INotificationService)))
                                 .Returns(_mockNotificationService.Object);
