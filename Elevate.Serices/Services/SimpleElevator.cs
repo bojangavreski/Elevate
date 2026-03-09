@@ -2,7 +2,6 @@
 using Elevate.Models.Enums;
 using Elevate.Models.Models;
 using Elevate.Serices.Utils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elevate.Serices.Services
@@ -18,19 +17,19 @@ namespace Elevate.Serices.Services
 
         private readonly ILogger<SimpleElevator> _logger;
         private readonly IDelayProvider _delayProvider;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly INotificationService _notificationService;
         private bool _isMoving = false;
 
         public SimpleElevator(int id, 
                               ILogger<SimpleElevator> logger,
                               IDelayProvider delayProvider,
-                              IServiceScopeFactory serviceScopeFactory) : base(id)
+                              INotificationService notificationService) : base(id)
         {
             CurrentFloor = 1;
             Direction = ElevatorDirectionType.Idle;
             _logger = logger;
             _delayProvider = delayProvider;
-            _serviceScopeFactory = serviceScopeFactory;
+            _notificationService = notificationService;
         }
 
         public override int CalculateCost(ElevatorRequest newRequest)
@@ -71,7 +70,6 @@ namespace Elevate.Serices.Services
             if (!CanEnqueue(request))
             {
                 throw new ArgumentException(
-                    $"Invalid elevator request: From={request.From}, To={request.To}. " +
                     $"Floors must be between {MinFloor} and {MaxFloor} and should not be equal");
             }
 
@@ -95,11 +93,7 @@ namespace Elevate.Serices.Services
                     InitializeElevator(request, cancellationToken);
                 }
 
-                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
-                {
-                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                    await notificationService.RequestEnqueued(Id, request.From, request.To, request.Uid.ToString());
-                }
+                await _notificationService.RequestEnqueued(Id, request.From, request.To, request.Uid.ToString());
 
                 _logger.LogInformation($"==== Elevator {Id} ==== Request From: {request.From} To: {request.To}");
             }
@@ -185,12 +179,8 @@ namespace Elevate.Serices.Services
 
                     CurrentFloor = nextFloor;
 
-                    using (IServiceScope scope = _serviceScopeFactory.CreateScope())
-                    {
-                        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                        await notificationService.Move(Id, Direction.ToString().ToLower());
-                    }
-
+                    await _notificationService.Move(Id, Direction.ToString().ToLower());
+                    
                     _logger.LogInformation($"Elevator {Id} moved to floor {CurrentFloor}");
 
                     UpdateDirection();
@@ -203,11 +193,7 @@ namespace Elevate.Serices.Services
                     {
                         _isMoving = false;
 
-                        using (IServiceScope scope = _serviceScopeFactory.CreateScope())
-                        {
-                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                            await notificationService.SetIdle(Id);
-                        }
+                       await _notificationService.SetIdle(Id);
 
                         break;
                     }
@@ -291,13 +277,8 @@ namespace Elevate.Serices.Services
             if (toDisembark.Count > 0 ||
                 toEmbark.Count > 0)
             {
-                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
-                {
-                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                    await notificationService.Stop(Id); // It is really tough to handle both embark and disembark in the frontend
-
-                    await notificationService.RemoveRequests(toDisembark.Select(x => x.Uid));
-                }
+                await _notificationService.Stop(Id); // It is really tough to handle both embark and disembark in the frontend
+                await _notificationService.RemoveRequests(toDisembark.Select(x => x.Uid));
 
                 await _delayProvider.Delay(TimeSpan.FromSeconds(StopDelaySeconds), cancellationToken);
             }

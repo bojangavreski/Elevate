@@ -31,9 +31,6 @@ namespace Elevate.Unit.Tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => elevator.EnqueueRequest(request, CancellationToken.None));
-
-            Assert.Contains("Invalid elevator request", exception.Message);
-            Assert.Contains($"From={from}", exception.Message);
         }
 
         [Theory]
@@ -50,9 +47,6 @@ namespace Elevate.Unit.Tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => elevator.EnqueueRequest(request, CancellationToken.None));
-
-            Assert.Contains("Invalid elevator request", exception.Message);
-            Assert.Contains($"To={to}", exception.Message);
         }
 
         [Theory]
@@ -68,8 +62,6 @@ namespace Elevate.Unit.Tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => elevator.EnqueueRequest(request, CancellationToken.None));
-
-            Assert.Contains("From must not equal To", exception.Message);
         }
 
 

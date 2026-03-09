@@ -12,7 +12,7 @@ namespace Elevate.API
         {
             return services.AddSingleton<IElevatorManager, ElevatorManager>()
                             .AddSingleton<IDelayProvider, DelayProvider>()
-                            .AddScoped<INotificationService, NotificationService>()
+                            .AddSingleton<INotificationService, NotificationService>()
                             .RegisterElevatorServices();
         }
         
@@ -28,7 +28,7 @@ namespace Elevate.API
                 {
                     var logger = sp.GetRequiredService<ILogger<SimpleElevator>>();
                     var delayProvider = sp.GetRequiredService<IDelayProvider>();
-                    var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+                    var serviceScopeFactory = sp.GetRequiredService<INotificationService>();
 
                     return new SimpleElevator(elevatorId, logger, delayProvider, serviceScopeFactory);
                 });

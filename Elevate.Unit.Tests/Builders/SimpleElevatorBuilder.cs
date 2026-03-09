@@ -13,9 +13,6 @@ namespace Elevate.Unit.Tests.Builders
     {
         private readonly Mock<ILogger<SimpleElevator>> _mockLogger = new();
         private readonly Mock<INotificationService> _mockNotificationService = new();
-        private readonly Mock<IServiceProvider> _mockServiceProvider = new();
-        private readonly Mock<IServiceScope> _mockServiceScope = new();
-        private readonly Mock<IServiceScopeFactory> _mockServiceScopeFactory = new();
 
         private IDelayProvider _delayProvider = new FakeDelayProvider();
         private int _currentFloor = 1;
@@ -54,18 +51,11 @@ namespace Elevate.Unit.Tests.Builders
             _mockNotificationService.Setup(sp => sp.Move(It.IsAny<int>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             _mockNotificationService.Setup(sp => sp.RemoveRequests(It.IsAny<IEnumerable<Guid>>())).Returns(Task.CompletedTask);
 
-            _mockServiceProvider.Setup(sp => sp.GetService(typeof(INotificationService)))
-                                .Returns(_mockNotificationService.Object);
-            _mockServiceScope.Setup(s => s.ServiceProvider)
-                             .Returns(_mockServiceProvider.Object);
-            _mockServiceScopeFactory.Setup(f => f.CreateScope())
-                                    .Returns(_mockServiceScope.Object);
-
             var elevator = new SimpleElevator(
                 1, // id
                 _mockLogger.Object,
                 _delayProvider,
-                _mockServiceScopeFactory.Object
+                _mockNotificationService.Object
             );
 
             SetPrivateField(elevator, "CurrentFloor", _currentFloor);
