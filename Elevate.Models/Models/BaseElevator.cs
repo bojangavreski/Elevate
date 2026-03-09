@@ -5,6 +5,9 @@ namespace Elevate.Models.Models
 {
     public abstract class BaseElevator : IElevator
     {
+        protected const int MinFloor = 1;
+        protected const int MaxFloor = 10;
+
         public int Id { get; }
 
         protected BaseElevator(int id)
@@ -22,9 +25,13 @@ namespace Elevate.Models.Models
 
         public virtual bool CanEnqueue(ElevatorRequest elevatorRequest)
         {
-            return elevatorRequest.From >= 1 &&
-                   elevatorRequest.To > 1 &&
-                   elevatorRequest.From <= 10 && elevatorRequest.To <= 10 &&
+            if (elevatorRequest == null)
+                return false;
+
+            return elevatorRequest.From >= MinFloor &&
+                   elevatorRequest.To >= MinFloor &&
+                   elevatorRequest.From <= MaxFloor &&
+                   elevatorRequest.To <= MaxFloor &&
                    elevatorRequest.From != elevatorRequest.To;
         }
     }

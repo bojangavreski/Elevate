@@ -9,7 +9,6 @@ namespace Elevate.Serices.Services
 {
     public class SimpleElevator : BaseElevator
     {
-        private int MaxFloor = 10;
         private double MovementDelaySeconds = 2;
         private double StopDelaySeconds = 2;
 
@@ -64,6 +63,18 @@ namespace Elevate.Serices.Services
 
         public async override Task EnqueueRequest(ElevatorRequest request, CancellationToken cancellationToken)
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            if (!CanEnqueue(request))
+            {
+                throw new ArgumentException(
+                    $"Invalid elevator request: From={request.From}, To={request.To}. " +
+                    $"Floors must be between {MinFloor} and {MaxFloor} and should not be equal");
+            }
+
             await AddRequest(request, cancellationToken);
         }
 
