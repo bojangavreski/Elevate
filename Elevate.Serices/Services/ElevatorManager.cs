@@ -54,11 +54,11 @@ namespace Elevate.Serices.Services
             _isLoopInitialized = true;
             while (true)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-
                 var request = GenerateRandomRequest();
 
                 await RequestElevator(request, cancellationToken);
+
+                await Task.Delay(TimeSpan.FromSeconds(15));
             }
         }
 
