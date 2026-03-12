@@ -27,3 +27,5 @@ To test the application:
 This application is not production ready and there is a room for improvement in many aspects of it. However it is a great programming exercise. 
 
 Enjoy :)
+
+P.S I wanted to experiment with Microsoft Orleans, hence I made [ElevateV2](https://github.com/bojangavreski/ElevateV2)
